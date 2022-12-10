@@ -2,6 +2,7 @@ import day01 from "./src/day01";
 import day02 from "./src/day02";
 import day03 from "./src/day03";
 import day04 from "./src/day04";
+import day05 from "./src/day05";
 
 const args = process.argv.slice(2);
 if (args.length < 1) {
@@ -31,7 +32,10 @@ if (args.length < 1) {
       day04();
       break;
     }
-    case 5:
+    case 5: {
+      day05();
+      break;
+    }
     case 6:
     case 7:
     case 8:
