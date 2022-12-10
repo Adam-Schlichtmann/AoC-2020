@@ -16,10 +16,6 @@ const part1 = () => {
   console.log(`Highest Seat ID: ${maxSeatID}`);
 };
 
-const printPlane = (plane: string[][]) => {
-  console.log(plane.map((r) => r.join("")).join("\n"));
-};
-
 const findSeat = (plane: string[][]) => {
   let id = 0;
 
@@ -60,12 +56,6 @@ const part2 = async () => {
     const seat = getBinary(line.slice(7));
     console.log("SEATING", row, seat);
     plane[row][seat] = "X";
-
-    // printPlane(plane);
-    console.log("EMPTY SEATS", plane.flat().filter((f) => f === "O").length);
-
-    printPlane(plane);
-    console.log("================");
   });
 
   console.log(`My Seat ID: ${findSeat(plane)}`);
