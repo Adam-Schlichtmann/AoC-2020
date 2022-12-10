@@ -1,0 +1,52 @@
+{
+  "name": "aoc-2020",
+  "version": "1.0.0",
+  "description": "A template repo for use in the Advent of Code",
+  "main": "index.js",
+  "scripts": {
+    "test": "ava",
+    "day": "yarn ts-node main.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adam-Schlichtmann/AoC-2020.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Adam-Schlichtmann/AoC-2020/issues"
+  },
+  "homepage": "https://github.com/Adam-Schlichtmann/AoC-2020#readme",
+  "dependencies": {
+    "typescript": "^4.9.4"
+  },
+  "devDependencies": {
+    "@ava/typescript": "^3.0.1",
+    "@types/node": "^18.11.11",
+    "ava": "^5.1.0",
+    "rimraf": "^3.0.2",
+    "ts-node": "^10.9.1"
+  },
+  "ava": {
+    "files": [
+      "**/*.test.ts"
+    ],
+    "concurrency": 5,
+    "failFast": true,
+    "failWithoutAssertions": false,
+    "verbose": true,
+    "nodeArguments": [
+      "--trace-deprecation",
+      "--napi-modules"
+    ],
+    "typescript": {
+      "extensions": [
+        "ts"
+      ],
+      "rewritePaths": {
+        "src/": "dist/src/"
+      },
+      "compile": "tsc"
+    }
+  }
+}
