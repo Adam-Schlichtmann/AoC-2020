@@ -4,6 +4,10 @@ import day03 from "./src/day03";
 import day04 from "./src/day04";
 import day05 from "./src/day05";
 import day06 from "./src/day06";
+import day07 from "./src/day07";
+import day08 from "./src/day08";
+import day09 from "./src/day09";
+import day10 from "./src/day10";
 
 const args = process.argv.slice(2);
 if (args.length < 1) {
@@ -41,10 +45,22 @@ if (args.length < 1) {
       day06();
       break;
     }
-    case 7:
-    case 8:
-    case 9:
-    case 10:
+    case 7: {
+      day07();
+      break;
+    }
+    case 8: {
+      day08();
+      break;
+    }
+    case 9: {
+      day09();
+      break;
+    }
+    case 10: {
+      day10();
+      break;
+    }
     case 11:
     case 12:
     case 13:
