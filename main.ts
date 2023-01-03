@@ -8,6 +8,10 @@ import day07 from "./src/day07";
 import day08 from "./src/day08";
 import day09 from "./src/day09";
 import day10 from "./src/day10";
+import day11 from "./src/day11";
+import day12 from "./src/day12";
+import day13 from "./src/day13";
+import day14 from "./src/day14";
 
 const args = process.argv.slice(2);
 if (args.length < 1) {
@@ -61,10 +65,22 @@ if (args.length < 1) {
       day10();
       break;
     }
-    case 11:
-    case 12:
-    case 13:
-    case 14:
+    case 11: {
+      day11();
+      break;
+    }
+    case 12: {
+      day12();
+      break;
+    }
+    case 13: {
+      day13();
+      break;
+    }
+    case 14: {
+      day14();
+      break;
+    }
     case 15:
     case 16:
     case 17:
