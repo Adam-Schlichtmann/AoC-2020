@@ -6,7 +6,6 @@ const part1 = () => {
   const allFileContents = fs.readFileSync("./src/day15/input.txt", "utf-8");
   const lines = allFileContents.split(/\r?\n/).filter((f) => !!f);
   const starting = lines[0].split(",").map((n) => Number.parseInt(n));
-  // const starting = [0, 3, 6];
   const history: Record<number, number[]> = {};
   let last: number = -1;
   starting.forEach((n, i) => {
