@@ -12,6 +12,10 @@ import day11 from "./src/day11";
 import day12 from "./src/day12";
 import day13 from "./src/day13";
 import day14 from "./src/day14";
+import day15 from "./src/day15";
+import day16 from "./src/day16";
+import day17 from "./src/day17";
+import day18 from "./src/day18";
 
 const args = process.argv.slice(2);
 if (args.length < 1) {
@@ -81,10 +85,22 @@ if (args.length < 1) {
       day14();
       break;
     }
-    case 15:
-    case 16:
-    case 17:
-    case 18:
+    case 15: {
+      day15();
+      break;
+    }
+    case 16: {
+      day16();
+      break;
+    }
+    case 17: {
+      day17();
+      break;
+    }
+    case 18: {
+      day18();
+      break;
+    }
     case 19:
     case 20:
     case 21:
