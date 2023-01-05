@@ -1,5 +1,4 @@
 import fs from "fs";
-import { syncBuiltinESMExports } from "module";
 
 const part1 = () => {
   console.log("DAY 13 Part 1");
