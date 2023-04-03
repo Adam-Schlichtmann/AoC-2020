@@ -62,7 +62,6 @@ const part1 = () => {
       cups[v] = input[i + 1];
     }
   });
-  console.log(cups);
 
   const result = play(P1_ROUNDS, cups, input[0]);
 
