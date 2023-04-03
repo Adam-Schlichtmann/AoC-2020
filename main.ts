@@ -20,6 +20,7 @@ import day19 from "./src/day19";
 import day20 from "./src/day20";
 import day21 from "./src/day21";
 import day22 from "./src/day22";
+import day23 from "./src/day23";
 
 const args = process.argv.slice(2);
 if (args.length < 1) {
@@ -121,7 +122,10 @@ if (args.length < 1) {
       day22();
       break;
     }
-    case 23:
+    case 23: {
+      day23();
+      break;
+    }
     case 24:
     case 25:
     default: {
