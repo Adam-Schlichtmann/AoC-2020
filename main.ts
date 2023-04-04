@@ -21,6 +21,7 @@ import day20 from "./src/day20";
 import day21 from "./src/day21";
 import day22 from "./src/day22";
 import day23 from "./src/day23";
+import day24 from "./src/day24";
 
 const args = process.argv.slice(2);
 if (args.length < 1) {
@@ -126,7 +127,10 @@ if (args.length < 1) {
       day23();
       break;
     }
-    case 24:
+    case 24: {
+      day24();
+      break;
+    }
     case 25:
     default: {
       console.log(`UNKNOWN DAY: ${day}`);
