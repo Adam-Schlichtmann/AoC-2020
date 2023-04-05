@@ -1,16 +1,144 @@
 import fs from "fs";
 import {
-  cleanTile,
-  rotateGrid,
-  checkMonster,
+  getCornerTile,
   getMonsterCoords,
-  getNeighbors,
-  isUpperLeft,
-  rotateNeighbors,
-  flipGrid,
-  getEdge,
+  getNextInRow,
+  getNextRowStart,
+  getTileSides,
+  matchSideToTile,
+  rotate90Clockwise,
+  setAsMonster,
+  removeBorders,
 } from "./utils";
-import { Tile } from "./Types";
+import { Tile, Tile2 } from "./Types";
+
+// Did not feel like writing up test data on all of these larger helpers
+
+const orientTopLeftCornerTile = (corner: Tile2, tiles: Tile2[]) => {
+  const sides = getTileSides(corner);
+  const neighbors = tiles.filter((n) => {
+    if (n.id === corner.id) return false;
+    const nSides = getTileSides(n);
+    return sides.some((s) => nSides.includes(s));
+  });
+  const matches = matchSideToTile(corner, neighbors);
+  if (matches[0] > 0 && matches[1] > 0) {
+    return corner.tile.reverse();
+  }
+  if (matches[0] > 0 && matches[2] > 0) {
+    console.log("THIS IS AN ERROR!!!");
+    return corner.tile;
+  }
+  if (matches[0] > 0 && matches[3] > 0) {
+    return corner.tile.map((r) => r.split("").reverse().join("")).reverse();
+  }
+  if (matches[1] > 0 && matches[2] > 0) {
+    return corner.tile;
+  }
+  if (matches[1] > 0 && matches[3] > 0) {
+    console.log("THIS IS AN ERROR!!!");
+    return corner.tile;
+  }
+  if (matches[2] > 0 && matches[3] > 0) {
+    return corner.tile.map((r) => r.split("").reverse().join(""));
+  }
+  console.log("THIS IS AN ERROR!!!");
+  return corner.tile;
+};
+
+const orientNextInRow = (grid: string[][], currentRow: number, next: Tile2) => {
+  const side = grid[currentRow].map((r) => r[r.length - 1]).join("");
+
+  const nextSides = getTileSides(next);
+  const matchIndex = nextSides.findIndex((s) => s === side);
+  if (matchIndex === -1) {
+    console.log("ERROR: next tile is not matching on row");
+    return next.tile;
+  }
+  if (matchIndex === 0) {
+    // Flip vertically
+    // Rotate 90 clockwise
+    return rotate90Clockwise(next.tile.reverse());
+  }
+  if (matchIndex === 1) {
+    // Rotate 90 counter clock
+    return rotate90Clockwise(rotate90Clockwise(rotate90Clockwise(next.tile)));
+  }
+  if (matchIndex === 2) {
+    // Flip horizontal
+    return next.tile.map((r) => r.split("").reverse().join(""));
+  }
+  if (matchIndex === 3) {
+    // Rotate 180 clockwise
+    return rotate90Clockwise(rotate90Clockwise(next.tile));
+  }
+  if (matchIndex === 4) {
+    // Rotate 90 clockwise
+    return rotate90Clockwise(next.tile);
+  }
+  if (matchIndex === 5) {
+    // flip vertically
+    // Rotate 90 counter
+    return rotate90Clockwise(
+      rotate90Clockwise(rotate90Clockwise(next.tile.reverse()))
+    );
+  }
+  if (matchIndex === 6) {
+    // Do nothing
+    return next.tile;
+  }
+  if (matchIndex === 7) {
+    // flip vertically
+    return next.tile.reverse();
+  }
+  return next.tile;
+};
+
+const orientNextRowStart = (grid: string[][], next: Tile2): string[] => {
+  const lastRow = grid[grid.length - 1][grid[grid.length - 1].length - 1];
+
+  const nextSides = getTileSides(next);
+  const matchIndex = nextSides.findIndex((s) => lastRow.startsWith(s));
+  if (matchIndex === -1) {
+    console.log("ERROR: next tile is not matching on row");
+    return next.tile;
+  }
+  if (matchIndex === 0) {
+    // Do nothing
+    return next.tile;
+  }
+  if (matchIndex === 1) {
+    // Flip horizontal
+    return next.tile.map((r) => r.split("").reverse().join(""));
+  }
+  if (matchIndex === 2) {
+    // Rotate 90 counter clockwise
+    return rotate90Clockwise(rotate90Clockwise(rotate90Clockwise(next.tile)));
+  }
+  if (matchIndex === 3) {
+    // Flip vertically
+    // Rotate 90 clockwise
+    return rotate90Clockwise(next.tile.reverse());
+  }
+  if (matchIndex === 4) {
+    // Flip vertical
+    return next.tile.reverse();
+  }
+  if (matchIndex === 5) {
+    // Rotate 180 clockwise
+    return rotate90Clockwise(rotate90Clockwise(next.tile));
+  }
+  if (matchIndex === 6) {
+    // Flip vertical
+    // Rotate 90 clockwise
+    return rotate90Clockwise(next.tile.reverse());
+  }
+  if (matchIndex === 7) {
+    // Rotate 90 clockwise
+    return rotate90Clockwise(next.tile);
+  }
+  return next.tile;
+};
 
 const part1 = () => {
   console.log("DAY 20 Part 1");
@@ -18,211 +146,143 @@ const part1 = () => {
   const allFileContents = fs.readFileSync("./src/day20/input.txt", "utf-8");
   const rawTiles = allFileContents.split(/\n\n/).filter((f) => !!f);
 
-  const tiles = rawTiles.map<Tile>((raw) => {
+  const tiles = rawTiles.map<Tile2>((raw) => {
     const lines = raw.split(/\r?\n/);
-
-    let left: string = "";
-    let right: string = "";
-    for (let i = 1; i < lines.length; i++) {
-      left += lines[i][0];
-      right += lines[i][lines[i].length - 1];
-    }
-
+    const tile = lines.slice(1, lines.length);
     return {
       id: Number.parseInt(lines[0].replace(/[^0-9]/g, "")),
-      sides: [lines[1], right, lines[lines.length - 1], left],
-      tile: lines.slice(1, lines.length),
-      neighbors: Array(4).fill(-1),
+      tile,
     };
   });
-  const fullTiles = tiles.map((t) => getNeighbors(t, tiles));
+  const corners: Tile2[] = [];
+  for (let i = 0; i < 4; i++) {
+    const nextCorner = getCornerTile(
+      // Move already found tiles to the back
+      tiles.sort((t) => (corners.some((c) => c.id === t.id) ? 1 : -1))
+    );
+    console.log(nextCorner?.id);
+    if (nextCorner) {
+      corners.push(nextCorner);
+    } else {
+      console.log("MISSING A CORNER");
+    }
+  }
 
-  const corners = fullTiles.filter(
-    (f) => f.neighbors.filter((f) => f > 0).length === 2
-  );
   console.log(
-    `Product of corners ${corners.reduce((acc, item) => item.id * acc, 1)}`
+    `Product of corners: ${corners.reduce((acc, item) => item.id * acc, 1)}`
   );
 };
 
 const part2 = () => {
   console.log("DAY 20 Part 2");
-  const allFileContents = fs.readFileSync("./src/day20/test.txt", "utf-8");
+  const allFileContents = fs.readFileSync("./src/day20/input.txt", "utf-8");
   const rawTiles = allFileContents.split(/\n\n/).filter((f) => !!f);
 
-  const tiles = rawTiles
-    .map<Tile>((raw) => {
-      const lines = raw.split(/\r?\n/);
-      const tile = lines.slice(1, lines.length);
-      return {
-        id: Number.parseInt(lines[0].replace(/[^0-9]/g, "")),
-        sides: [
-          lines[1],
-          getEdge(tile, 1),
-          lines[lines.length - 1],
-          getEdge(tile, 3),
-        ],
-        tile,
-        neighbors: Array(4).fill(-1),
-      };
+  const tiles = rawTiles.map<Tile2>((raw) => {
+    const lines = raw.split(/\r?\n/);
+    const tile = lines.slice(1, lines.length);
+    return {
+      id: Number.parseInt(lines[0].replace(/[^0-9]/g, "")),
+      tile,
+    };
+  });
+
+  const topLeftCorner = getCornerTile(tiles);
+  if (!topLeftCorner) {
+    console.log("No corner tile found");
+    return;
+  }
+
+  let queue = [...tiles.filter((t) => t.id !== topLeftCorner.id)];
+
+  const grid: string[][] = [[...orientTopLeftCornerTile(topLeftCorner, tiles)]];
+
+  let row = 0;
+  let nextTile = getNextInRow(grid, row, queue);
+  let a = 0;
+  if (!nextTile) {
+    return;
+  }
+
+  while (nextTile) {
+    a++;
+
+    const nextTileOriented = orientNextInRow(grid, row, nextTile);
+    nextTileOriented.forEach((line, i) => {
+      grid[row][i] = grid[row][i] + line;
+    });
+    queue = queue.filter((t) => t.id !== nextTile?.id);
+    nextTile = getNextInRow(grid, row, queue);
+
+    // We need to jump rows
+    if (!nextTile) {
+      row++;
+      nextTile = getNextRowStart(grid, queue);
+      if (queue.length) {
+        if (!nextTile) {
+          console.log("Error going to next row");
+          return;
+        }
+        const nextRowStartOrientated = orientNextRowStart(grid, nextTile);
+        grid.push(nextRowStartOrientated);
+        queue = queue.filter((t) => t.id !== nextTile?.id);
+        nextTile = getNextInRow(grid, row, queue);
+      }
+    }
+
+    if (a > 1000) return;
+  }
+  const final = grid
+    .map((tileRow) => {
+      return tileRow
+        .slice(1, tileRow.length - 1)
+        .map((r) => removeBorders(r, topLeftCorner.tile[0].length));
     })
-    .map((t, _, array) => getNeighbors(t, array))
-    .sort((a, b) =>
-      a.neighbors.filter((f) => f > 0).length >
-      b.neighbors.filter((f) => f > 0).length
-        ? -1
-        : 1
-    );
+    .flat();
+  let flipped = final;
+  for (let flip = 0; flip < 2; flip++) {
+    flipped = flip === 0 ? final : final.reverse();
+    for (let rotate = 0; rotate < 4; rotate++) {
+      for (let r = 0; r < rotate; r++) {
+        flipped = rotate90Clockwise(flipped);
+      }
+      let found = false;
+      for (let y = 0; y < flipped.length; y++) {
+        for (let x = 0; x < flipped[y].length; x++) {
+          const monster = getMonsterCoords(x, y);
+          if (
+            monster.every(
+              ([mx, my]) =>
+                my >= 0 &&
+                my < flipped.length &&
+                mx >= 0 &&
+                mx < flipped[my].length &&
+                (flipped[my].charAt(mx) === "#" ||
+                  flipped[my].charAt(mx) === "O")
+            )
+          ) {
+            found = true;
+            monster.forEach(([mx, my]) => {
+              flipped[my] = setAsMonster(flipped[my], mx);
+            });
+          }
+        }
+      }
+      if (found) break;
+    }
+  }
+  flipped.forEach((r) => console.log(r));
 
-  //  === Attempts here ===
-
-  // Issue is that the tiles need to be rotated
-  // let grid: string[] = [];
-  //   let queue = [...tiles];
-  //   let current = queue.find((t) => isUpperLeft(t.neighbors));
-  //   let firstInRow = current;
-  //   let rowIndex = 1;
-  //   if (!current) {
-  //     console.log("Unable to find next tile");
-  //     return;
-  //   }
-  //   while (queue.length) {
-  //     console.log(queue.length);
-  //     console.log("ID:", current?.id);
-  //     if (!current || !firstInRow) {
-  //       console.log("error finding next tile");
-  //       return;
-  //     }
-  //     // Remove current from queue
-  //     queue = queue.filter((t) => t.id !== current?.id);
-
-  //     // Add to Grid
-  //     if (!grid.length) {
-  //       grid = [...cleanTile(current)];
-  //     } else {
-  //       cleanTile(current).forEach(
-  //         (row, i, array) =>
-  //           (grid[i + rowIndex * array.length] = `${
-  //             grid[i + rowIndex * array.length]
-  //           }${row}`)
-  //       );
-  //     }
-  //     // Find next to the right
-  //     current = queue.find((t) => t.neighbors[1] === current?.id);
-  //     if (!current) {
-  //       console.log("GOING TO NEW ROW");
-  //       rowIndex++;
-  //       // If there isn't a next on the right go to next row
-  //       current = queue.find((t) => t.neighbors[0] === firstInRow?.id);
-  //       firstInRow = current;
-  //     }
-  //   }
-  //   console.log(grid);
+  console.log(
+    "Answer",
+    flipped.reduce(
+      (acc, row) => acc + row.split("").filter((c) => c === "#").length,
+      0
+    )
+  );
 };
 
 export default () => {
   part1();
   part2();
 };
-
-const buildRow = (
-  tiles: Tile[],
-  current: Tile,
-  grid: string[] = []
-): string[] => {
-  // Handle Right
-  if (current.neighbors[1] > 0) {
-    const right = tiles.find((t) => t.id === current.neighbors[1]);
-    if (right) {
-      const cleaned = cleanTile(right);
-      return buildRow(
-        tiles,
-        right,
-        grid.map((r, i) => `${r}${cleaned[i]}`)
-      );
-    }
-  }
-  return grid;
-};
-
-// Issue is that the tiles need to be rotated
-// Was trying to start top left
-// let grid: string[] = [];
-//   let queue = [...tiles];
-//   let current = queue.find((t) => isUpperLeft(t.neighbors));
-//   let firstInRow = current;
-//   let rowIndex = 1;
-//   if (!current) {
-//     console.log("Unable to find next tile");
-//     return;
-//   }
-//   while (queue.length) {
-//     console.log(queue.length);
-//     console.log("ID:", current?.id);
-//     if (!current || !firstInRow) {
-//       console.log("error finding next tile");
-//       return;
-//     }
-//     // Remove current from queue
-//     queue = queue.filter((t) => t.id !== current?.id);
-
-//     // Add to Grid
-//     if (!grid.length) {
-//       grid = [...cleanTile(current)];
-//     } else {
-//       cleanTile(current).forEach(
-//         (row, i, array) =>
-//           (grid[i + rowIndex * array.length] = `${
-//             grid[i + rowIndex * array.length]
-//           }${row}`)
-//       );
-//     }
-//     // Find next to the right
-//     current = queue.find((t) => t.neighbors[1] === current?.id);
-//     if (!current) {
-//       console.log("GOING TO NEW ROW");
-//       rowIndex++;
-//       // If there isn't a next on the right go to next row
-//       current = queue.find((t) => t.neighbors[0] === firstInRow?.id);
-//       firstInRow = current;
-//     }
-//   }
-//   console.log(grid);
-
-// Same thing basically was trying to start from middle out
-// console.log(tiles);
-// let grid: string[] = [];
-// let queue = [...tiles];
-// let current = queue.find((t) => t.neighbors.every((n) => n > 0));
-
-// if (!current) {
-//   console.log("Unable to find next tile");
-//   return;
-// }
-// while (queue.length) {
-//   console.log(queue.length);
-//   console.log("ID:", current?.id);
-//   if (!current) {
-//     console.log("error finding next tile");
-//     return;
-//   }
-//   // Remove current from queue
-//   queue = queue.filter((t) => t.id !== current?.id);
-//   current.neighbors.forEach((n, i) => {
-//     const neighbor = tiles.find((t) => t.id === n);
-//     if (!neighbor) {
-//       return;
-//     }
-//     if (i === 0) {
-//       grid;
-//     }
-//   });
-//   // Add to Grid
-//   if (!grid.length) {
-//     grid = [...cleanTile(current)];
-//   } else {
-//   }
-//   // Find next to the right
-//   current = queue.find((t) => t.neighbors[1] === current?.id);
-// }
-// console.log(grid);

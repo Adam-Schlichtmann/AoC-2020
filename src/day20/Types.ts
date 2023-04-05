@@ -8,3 +8,8 @@ export type Tile = {
   // Id mapped to matching side
   neighbors: number[];
 };
+
+export type Tile2 = {
+  id: number;
+  tile: string[];
+};
